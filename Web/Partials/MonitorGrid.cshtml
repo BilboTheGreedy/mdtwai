@@ -1,0 +1,87 @@
+﻿@using Microsoft.Web.Helpers
+@{
+    var oData = OData.Get("http://"+@GlobalVal.__MDTSrv+":9801/MDTMonitorData/Computers");
+    
+    WebGrid oDatagrid  = new WebGrid(oData,
+                                     
+                               columnNames: new[] {"Name","PercentComplete","DeploymentStatus","StartTime","EndTime"}, 
+                               rowsPerPage: 5,
+                               ajaxUpdateContainerId: "grid", 
+                               ajaxUpdateCallback: "webGridUpdated",
+                               defaultSort: "StartTime"
+                               );
+if (Request.QueryString[oDatagrid.SortDirectionFieldName].IsEmpty()) {
+    oDatagrid.SortDirection = SortDirection.Descending;
+}
+}
+<meta http-equiv="refresh" content="60">
+        <script type="text/javascript">
+            function webGridUpdated() {
+                
+                var today = new Date();
+                var message = "Refreshed"+" "+today
+                $("#status").html(message);
+            }
+
+        </script>
+
+    <section >
+        <div >
+            <hgroup class="title">
+                
+                </hgroup>
+            <div id="grid">
+                        @oDatagrid.GetHtml(
+                columns: oDatagrid.Columns(
+                     oDatagrid.Column("Status","Status", format: @<text>@if(@item.DeploymentStatus == 1)
+                                                           {
+                                                           <img src="../../Images/Working1.gif" height="30" width="30" alt="Working"/> 
+                                                           }
+                                                           @if (@item.DeploymentStatus == 2){
+                                                              <img src="../../Images/error.png" height="30" width="30" alt="Error"/>  
+                                                           }
+                                                           @if (@item.DeploymentStatus == 3){
+                                                              <img src="../../Images/good_or_tick.png" height="30" width="30" alt="Good"/> 
+                                                           }
+                                                           @if (@item.DeploymentStatus == 4){
+                                                              <img src="../../Images/info.png" height="30" width="30" alt="Unresponsive"/>  
+                                                           }</text>),
+     oDatagrid.Column("Name", "Hostname",style: "hostname_col"),
+     oDatagrid.Column("PercentComplete", "Progress",style: "Progress_col", format: @<text>
+
+
+    <progress class="progress_bar" max="100" value="@item.PercentComplete"></progress><BR>
+
+        
+     @if(@item.DeploymentStatus == 1){
+        <span>Running/Active</span>
+     }
+     @if (@item.DeploymentStatus == 2){
+        <span>Failed</span> 
+     }
+     @if (@item.DeploymentStatus == 3){
+        <span>Successfully Completed</span> 
+     }
+      @if (@item.DeploymentStatus == 4){
+        <span>Unresponsive</span> 
+     }</text>),
+             
+             oDatagrid.Column("StartTime", "Start Time"),
+             oDatagrid.Column("EndTime", "End Time", style: "end_col")  
+            ), 
+        tableStyle: "grid",
+       headerStyle: "grid-header",
+       alternatingRowStyle: "grid-alternating-row",
+       selectedRowStyle: "grid-selected-row",
+       rowStyle: "grid-row-style",  
+            mode: WebGridPagerModes.NextPrevious,
+            previousText: "Previous", 
+            nextText: "Next"
+        )
+        </div>
+        <div id="status"></div>
+
+       </div>
+</section>
+
+        <div id="output"></div>

@@ -1,0 +1,147 @@
+﻿@using System.Xml.Linq
+@{
+    //Requires authentication to access
+    if (!WebSecurity.IsAuthenticated) {
+        Response.Redirect("~/Account/Login?returnUrl="
+            + Request.Url.LocalPath);}
+
+
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Pre-Stage New Host";
+     
+    //Load TaskSequances from Control over HTTP
+    var TaskSequencesFile = XDocument.Load("http://"+@GlobalVal.__MDTSrv+"/DeploymentShare/Control/TaskSequences.xml");
+    var TaskSequencesFileResults = from Task in TaskSequencesFile.Root.Elements()
+    select new { Name = Task.Element("Name").Value, ID = Task.Element("ID").Value };
+
+
+    //Load Applications from Control over HTTP
+    var ApplicationsFile = XDocument.Load("http://"+@GlobalVal.__MDTSrv+"/DeploymentShare/Control/Applications.xml");
+    var ApplicationsResults = from App in ApplicationsFile.Root.Elements()
+    select new { Name = App.Element("Name").Value,  appGUID = App.FirstAttribute.Value};
+
+
+    //Validation fields
+        Validation.RequireField("OSDComputerName", "You must enter a New Hostname");
+        Validation.RequireField("TaskSequenceID", "TaskSequenceID is required");
+        Validation.RequireField("MacAddress", "You haven't entered a Mac Address");
+ 
+   if(IsPost && Validation.IsValid()){ 
+       var db = Database.Open("MDTDB");
+    //ComputerIdentity
+    var AssetTag = "";
+    var UUID = "";
+    var SerialNumber = "";
+    var MacAddress = "";
+    var tesitng = "";
+
+
+
+
+       
+       
+
+    var check = db.QuerySingle("select MacAddress from ComputerIdentity where MacAddress = @0", MacAddress = Request.Form["MacAddress"]);
+    
+    //Check if MacAddress already exists, if return is null continue to insert new record      
+     if (check == null) {
+
+        //Settings
+        var OSDComputerName = "";
+        var TaskSequenceID = "";
+        var SkipWizard = "YES";
+        var Type = "C";
+        var message = ""; 
+
+        OSDComputerName = Request.Form["OSDComputerName"];
+        TaskSequenceID = Request.Form["TaskSequenceID"];
+        MacAddress = Request.Form["MacAddress"];
+        
+
+
+
+
+        //Insert new cords     
+        try{
+        var InsertComputerIdentity = db.QuerySingle("insert into ComputerIdentity(Description,AssetTag, UUID, SerialNumber, MacAddress) output inserted.ID as 'InsertedID' values(@0, @1, @2, @3, @4)", OSDComputerName +" - "+ TaskSequenceID, AssetTag, UUID, SerialNumber, MacAddress); 
+        var ComputerIdentityID = InsertComputerIdentity.InsertedID;
+        var InsertSettings = db.QuerySingle("insert into Settings(ID, Type, OSDComputerName, TaskSequenceID, SkipWizard) values(@0, @1, @2,@3,@4)", ComputerIdentityID, Type, OSDComputerName, TaskSequenceID.ToUpper(),SkipWizard);
+        message = "Successfully Staged"+ OSDComputerName;
+
+        //Applications
+        var Sequence = 0;
+          foreach(string SelectedApp in Request.Form){
+           if (SelectedApp.StartsWith("App_")) {
+               //Inc the sequence order
+                Sequence ++;
+               //Get App GUID
+               string appID = SelectedApp.Substring(6);
+               //Insert AppGUID and Sequence to DB
+               db.QuerySingle("insert into Settings_Applications(Type, ID,Sequence, Applications) values(@0, @1,@2,@3)",Type, ComputerIdentityID,Sequence, Request.Form[SelectedApp]);    
+           }  
+       } 
+
+        Response.Redirect("~/Staging/List-Staged");
+        
+        }
+        catch(Exception e){
+            message = "failed to pre-stage" + " "+ @OSDComputerName ;
+        }  
+        
+      }
+      //if value not equal 0 prompt user its not valid insert
+      else{
+          var message = ""; 
+          message = "Mac-Address is already pre-staged! Edit or remove it first.";
+          @message
+
+
+      }
+        
+
+  }
+
+  
+    }
+
+
+<link rel="stylesheet" type="text/css" href="~/css/dialog.css">
+<div>
+@RenderPage("~/Partials/StageNav.cshtml")
+</div>
+
+@Html.ValidationSummary()
+
+<div></div>
+<div>
+<form method="post" class="minimal">
+    <div class="container">
+                          <fieldset>
+    <legend>Pre-Stage Information</legend>
+    <p><label for="OSDComputerName">OSDComputerName:</label>
+        <input type="text" name="OSDComputerName" placeholder="Hostname to be applied" value="@Request.Form["OSDComputerName"]" />
+        
+    <p><label for="MacAddress">Mac-Address:</label>
+        <input type="text" name="MacAddress" placeholder="Host is identified by Mac-Address. Defined Like: 00:00:00:00:00" value="@Request.Form["MacAddress"]" />
+        
+     <p><label for="TaskSequenceID">Task Sequence:</label>
+                 <select name="TaskSequenceID"> 
+        @foreach (var item in TaskSequencesFileResults){
+                
+           <option value="@Request.Form["TaskSequenceID"]">@item.ID</option> 
+        }
+            </select><br>
+          </fieldset> 
+                  <fieldset>
+    <legend>Applications</legend>
+         
+             @foreach (var item in ApplicationsResults){
+         <input class="square" type="checkbox" name="App_@item.Name" value="@item.appGUID">@item.Name<br>
+                                                    }
+                      </fieldset>     
+    <input name="Action" type="submit" class="btn-minimal" type="submit" name="buttonSubmit" value="Add"/>
+   
+</div>
+</form> 
+
+</div>

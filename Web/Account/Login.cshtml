@@ -1,0 +1,65 @@
+﻿@{Layout = "~/_SiteLayout.cshtml";
+
+
+    var username = "";
+    var password = "";
+    var errorMessage = "";
+
+      var returnUrl = Request.QueryString["ReturnUrl"];
+    if (returnUrl.IsEmpty()) {
+        returnUrl = Href("~/");
+    }
+   
+    if(IsPost){
+        username = Request["username"];
+        password = Request["password"];
+        if(WebSecurity.Login(username,password,true)){
+            Context.RedirectLocal(returnUrl);
+        }
+        else
+        {
+            errorMessage = "Login was not successful.";
+        }
+    }
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="@Href("~/styles/forms.css")" type="text/css" />
+        <title>Login</title>
+    </head>
+    <body>
+
+            <section id="loginBox">
+	            <h2>Login</h2>
+	            <form method="post" class="minimal">
+		            <label for="username">
+			            Username:
+			            <input type="text" name="username" id="username" placeholder="E-mail" required="required" />
+		            </label>
+		            <label for="password">
+			            Password:
+			            <input type="password" name="password" id="password" placeholder="Password" required="required" />
+		            </label>
+		            <button type="submit" class="btn-minimal" class="btn-minimal">Sign in</button>
+                    <br>
+                                            @if(WebSecurity.IsAuthenticated){
+                            <p>You are currently logged in as @WebSecurity.CurrentUserName.
+                              <a href="@Href("~/Logout")">Log out</a>
+                            </p>
+                        }
+                      <p><a href="@Href("~/Account/Registration")">Register</a></p>
+                      <p><a href="@Href("~/Default")">Return to home page</a></p>
+                    <p>
+                        @if(errorMessage != ""){
+                            <span class="errorMessage">@errorMessage</span>
+                        }
+                    </p>
+	            </form>
+            </section>
+
+   </body>
+</html>

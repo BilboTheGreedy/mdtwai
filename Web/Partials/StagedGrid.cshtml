@@ -1,0 +1,45 @@
+﻿@{
+  
+    Page.Title = "MDT: Staged Machines";
+
+    var db = Database.Open("MDTDB") ;
+    var selectCommand = "SELECT Settings.OSDComputerName, Settings.TaskSequenceID, ComputerIdentity.MacAddress, ComputerIdentity.ID, Settings.Type FROM ComputerIdentity JOIN Settings ON Settings.ID=ComputerIdentity.ID WHERE Type = 'C'";
+    var searchTerm = "";
+
+
+        if(!Request.QueryString["SearchDescription"].IsEmpty() ) {
+        selectCommand = "SELECT Settings.OSDComputerName, Settings.TaskSequenceID, ComputerIdentity.MacAddress, ComputerIdentity.ID, Settings.Type FROM ComputerIdentity JOIN Settings ON Settings.ID=ComputerIdentity.ID WHERE Type = 'C' AND OSDComputerName LIKE @0";
+        searchTerm = "%" + Request["SearchDescription"] + "%";
+    }
+
+    var selectedData = db.Query(selectCommand, searchTerm);
+    var grid = new WebGrid(source: selectedData, defaultSort: "OSDComputerName", rowsPerPage:10);
+
+}
+
+<form method="get">
+    <div class="Test">
+
+      <input class="SearchTextBox" type="text" name="SearchDescription" placeholder="OSDComputerName" value="@Request.QueryString["SearchDescription"]" /> 
+      <input class="btn-Search" type="Submit" value="Search" />
+      
+    </div>
+
+    @grid.GetHtml(
+        columns: grid.Columns(
+	    grid.Column("OSDComputerName"),
+        grid.Column("TaskSequenceID"),
+	    grid.Column("MacAddress"),
+	    grid.Column(format: @<a class="btn-Grid" href="~/Staging/Remove-Staged?id=@item.ID">Remove</a>),
+        grid.Column(format: @<a class="btn-Grid" href="~/Staging/Edit-Staged?id=@item.ID">Edit</a>)
+        ),
+                tableStyle: "grid",
+       headerStyle: "grid-header",
+       alternatingRowStyle: "grid-alternating-row",
+       selectedRowStyle: "grid-selected-row",
+       rowStyle: "grid-row-style",  
+            mode: WebGridPagerModes.NextPrevious,
+            previousText: "Previous", 
+            nextText: "Next"
+        )
+    </form>

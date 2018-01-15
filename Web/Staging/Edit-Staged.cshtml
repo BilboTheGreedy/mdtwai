@@ -1,0 +1,140 @@
+﻿@using System.Xml.Linq
+@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Edit Pre-Staged host";
+
+    var OSDComputerName = "";
+    var TaskSequenceID = "";
+    var MacAddress ="";
+    var ID = "";
+    var message = "";
+
+     //Load TaskSequances from Control over HTTP
+    var TaskSequencesFile = XDocument.Load("http://"+@GlobalVal.__MDTSrv+"/DeploymentShare/Control/TaskSequences.xml");
+    var TaskSequencesFileResults = from Task in TaskSequencesFile.Root.Elements()
+    select new { Name = Task.Element("Name").Value, ID = Task.Element("ID").Value };
+
+    //Load Applications from Control over HTTP
+    var ApplicationsFile = XDocument.Load("http://"+@GlobalVal.__MDTSrv+"/DeploymentShare/Control/Applications.xml");
+    var ApplicationsResults = from App in ApplicationsFile.Root.Elements()
+    select new { Name = App.Element("Name").Value,  appGUID = App.FirstAttribute.Value};
+
+
+
+
+    if(!IsPost){
+        if(!Request.QueryString["ID"].IsEmpty() && Request.QueryString["ID"].IsInt()) {
+            ID = Request.QueryString["ID"];
+            var db = Database.Open("MDTDB");
+
+            var dbCommand = "SELECT Settings.OSDComputerName, Settings.TaskSequenceID, ComputerIdentity.MacAddress, ComputerIdentity.ID FROM ComputerIdentity JOIN Settings ON Settings.ID=ComputerIdentity.ID WHERE ComputerIdentity.ID = @0";
+            var row = db.QuerySingle(dbCommand, ID);
+
+            if(row != null) {
+                OSDComputerName = row.OSDComputerName;
+                MacAddress = row.MacAddress;
+                TaskSequenceID = row.TaskSequenceID;
+                
+
+
+               
+            }
+            else{
+                ModelState.AddFormError("No host was selected.");
+            }
+        }    
+        else{
+            ModelState.AddFormError("No host was selected.");
+        }    
+    }
+    
+    if(IsPost){
+        Validation.RequireField("OSDComputerName", "You must enter a OSDComputerName");
+        Validation.RequireField("TaskSequenceID", "TaskSequenceID is required");
+        Validation.RequireField("MacAddress", "MacAddress is required");
+        Validation.RequireField("ID", "No ID was submitted!");
+
+        OSDComputerName = Request.Form["OSDComputerName"];
+        MacAddress = Request.Form["MacAddress"];
+        TaskSequenceID = Request.Form["TaskSequenceID"];
+        ID = Request.Form["ID"];
+        var test = " - ";
+        
+        if(Validation.IsValid()){
+            var db = Database.Open("MDTDB");
+            var check = db.QuerySingle("select MacAddress from ComputerIdentity where MacAddress = @0", MacAddress = Request.Form["MacAddress"]);
+    
+                //Check if MacAddress already exists, if return is null continue to insert new record      
+                 
+                     
+                         
+            
+            var UpdateSettings = "UPDATE Settings SET OSDComputerName=@0, TaskSequenceID=@1 WHERE ID=@2";
+            db.Execute(UpdateSettings, OSDComputerName, TaskSequenceID, ID);
+            var UpdateIdentity = "UPDATE ComputerIdentity SET Description=@0, MacAddress=@1 WHERE ID=@2";
+            db.Execute(UpdateIdentity, OSDComputerName,MacAddress, ID);
+
+            var DeleteApplications = "DELETE FROM Settings_Applications WHERE ID = @0";
+            db.Execute(DeleteApplications, ID);
+                            //Applications
+                var Sequence = 0;
+                var Type = "C";
+                  foreach(string SelectedApp in Request.Form){
+                   if (SelectedApp.StartsWith("App_")) {
+                       //Inc the sequence order
+                        Sequence ++;
+                       //Get App GUID
+                       string appID = SelectedApp.Substring(6);
+                       //Insert AppGUID and Sequence to DB
+                       db.QuerySingle("insert into Settings_Applications(Type, ID,Sequence, Applications) values(@0, @1,@2,@3)",Type, ID,Sequence, Request.Form[SelectedApp]);    
+                   }  
+               } 
+
+
+
+            Response.Redirect("~/Staging/List-Staged");
+            }
+
+        }
+    }
+
+<div>
+@RenderPage("~/Partials/StageNav.cshtml")
+</div>
+<form method="post" class="minimal">
+
+
+    <p><label for="OSDComputerName">OSDComputerName:</label></p>
+        <input type="text" name="OSDComputerName" value="@OSDComputerName" />
+      
+    <p><label for="MacAddress">MacAddress:</label>
+        <input type="text" name="MacAddress" value="@MacAddress" /></p>
+
+     <p><label for="TaskSequenceID">TaskSequenceID:</label></p>
+                 <select name="TaskSequenceID"> 
+        @foreach (var item in TaskSequencesFileResults){
+                
+           <option value="@Request.Form["TaskSequenceID"]">@item.ID</option> 
+        }
+            </select><br>
+         <fieldset>
+    <legend>Applications</legend>
+                  
+                      @{
+                          var db2 = Database.Open("MDTDB");
+                    foreach (var item in ApplicationsResults){
+                    var SelectedApps = db2.QuerySingle("Select Applications From Settings_Applications WHERE ID = @0 and Applications = @1", ID, item.appGUID);
+                    if (SelectedApps != null){
+                    <input checked class="squaredOne" type="checkbox" name="App_@item.Name" value="@item.appGUID">@item.Name<br>
+                    }
+                    else{
+                        <input class="squaredOne" type="checkbox" name="App_@item.Name" value="@item.appGUID">@item.Name<br>
+                    }
+                  }
+                  }   
+
+    <input type="hidden" name="ID" value="@ID" />
+             </fieldset>
+         <p><input class="btn-minimal" type="submit" name="buttonSubmit" value="Submit Changes" /></p>
+</form> 
+    

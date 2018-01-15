@@ -1,0 +1,109 @@
+﻿@using System.Xml.Linq
+@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Edit Pre-Staged host";
+
+
+    var Make = "";
+    var Model ="";
+    var ID = "";
+    var message = "";
+
+    //Load Applications from Control over HTTP
+    var ApplicationsFile = XDocument.Load("http://"+@GlobalVal.__MDTSrv+"/DeploymentShare/Control/Applications.xml");
+    var ApplicationsResults = from App in ApplicationsFile.Root.Elements()
+    select new { Name = App.Element("Name").Value,  appGUID = App.FirstAttribute.Value};
+
+    if(!IsPost){
+        if(!Request.QueryString["ID"].IsEmpty() && Request.QueryString["ID"].IsInt()) {
+            ID = Request.QueryString["ID"];
+            var db = Database.Open("MDTDB");
+
+            var dbCommand = "SELECT * FROM MakeModelIdentity WHERE ID =  @0";
+            var row = db.QuerySingle(dbCommand, ID);
+
+            if(row != null) {
+                Make = row.Make;
+                Model = row.Model;
+
+            }
+            else{
+                ModelState.AddFormError("No host was selected.");
+            }
+        }    
+        else{
+            ModelState.AddFormError("No host was selected.");
+        }    
+    }
+    
+    if(IsPost){
+        Validation.RequireField("Make", "You must enter a Make");
+        Validation.RequireField("Model", "Model is required");
+        Validation.RequireField("ID", "No ID was submitted!");
+
+        Make = Request.Form["Make"];
+        Model = Request.Form["Model"];
+        ID = Request.Form["ID"];
+        
+        if(Validation.IsValid()){
+            var db = Database.Open("MDTDB");
+
+            var UpdateSettings = "UPDATE MakeModelIdentity SET Make=@0, Model=@1 WHERE ID=@2";
+            db.Execute(UpdateSettings, Make, Model, ID);
+
+            var DeleteApplications = "DELETE FROM Settings_Applications WHERE ID = @0";
+            db.Execute(DeleteApplications, ID);
+                            //Applications
+                var Sequence = 0;
+                var Type = "M";
+                  foreach(string SelectedApp in Request.Form){
+                   if (SelectedApp.StartsWith("App_")) {
+                       //Inc the sequence order
+                        Sequence ++;
+                       //Get App GUID
+                       string appID = SelectedApp.Substring(6);
+                       //Insert AppGUID and Sequence to DB
+                       db.QuerySingle("insert into Settings_Applications(Type, ID, Sequence, Applications) values(@0, @1,@2,@3)",Type, ID, Sequence, Request.Form[SelectedApp]);    
+                   }  
+               } 
+
+            Response.Redirect("~/Staging/List-Make-Model");
+            }
+
+        }
+    }
+
+<div>
+@RenderPage("~/Partials/StageNav.cshtml")
+</div>
+<form method="post" class="minimal">
+
+
+    <p><label for="Make">Make:</label></p>
+        <input type="text" name="Make" value="@Make" /></p>
+      
+    <p><label for="Model">Model:</label></p>
+        <input type="text" name="Model" value="@Model" /></p>
+
+         <fieldset>
+    <legend>Applications</legend>
+                  
+                      @{
+                          var db2 = Database.Open("MDTDB");
+                    foreach (var item in ApplicationsResults){
+                    var SelectedApps = db2.QuerySingle("Select Applications From Settings_Applications WHERE ID = @0 and Applications = @1", ID, item.appGUID);
+                    if (SelectedApps != null){
+                    <input checked class="squaredOne" type="checkbox" name="App_@item.Name" value="@item.appGUID">@item.Name<br>
+                    }
+                    else{
+                        <input class="squaredOne" type="checkbox" name="App_@item.Name" value="@item.appGUID">@item.Name<br>
+                    }
+                  }
+                  }   
+
+    <input type="hidden" name="ID" value="@ID" />
+             </fieldset>
+         <p><input class="btn-minimal" type="submit" name="buttonSubmit" value="Submit Changes" /></p>
+</form> 
+    
+

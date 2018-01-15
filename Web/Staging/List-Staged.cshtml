@@ -1,0 +1,82 @@
+﻿@using System.Xml.Linq
+@{
+    //Requires authentication to access
+    if (!WebSecurity.IsAuthenticated) {
+        Response.Redirect("~/Account/Login?returnUrl="
+            + Request.Url.LocalPath);}
+
+
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Pre-Stage Hosts";
+     
+    //Load TaskSequances from Control over HTTP
+    var file = XDocument.Load("http://mdt-ap01/DeploymentShare/Control/TaskSequences.xml");
+    var results = from e in file.Root.Elements()
+    select new { Name = e.Element("Name").Value, ID = e.Element("ID").Value };
+
+    //Validation fields
+        Validation.RequireField("OSDComputerName", "You must enter a New Hostname");
+        Validation.RequireField("TaskSequenceID", "TaskSequenceID is required");
+        Validation.RequireField("MacAddress", "You haven't entered a Mac Address");
+ 
+   if(IsPost && Validation.IsValid()){ 
+       var db = Database.Open("MDTDB");
+    //ComputerIdentity
+    var AssetTag = "";
+    var UUID = "";
+    var SerialNumber = "";
+    var MacAddress = "";
+
+    var check = db.QuerySingle("select MacAddress from ComputerIdentity where MacAddress = @0", MacAddress);
+
+    //Check if MacAddress already exists, if return is 0 continue to insert new record      
+     if (check != null) {
+
+        //Settings
+        var OSDComputerName = "";
+        var TaskSequenceID = "";
+        var SkipWizard = "YES";
+        var Type = "C";
+        var message = ""; 
+
+        OSDComputerName = Request.Form["OSDComputerName"];
+        TaskSequenceID = Request.Form["TaskSequenceID"];
+        MacAddress = Request.Form["MacAddress"];
+
+        //Insert new cords     
+        try{
+        var InsertComputerIdentity = db.QuerySingle("insert into ComputerIdentity(Description,AssetTag, UUID, SerialNumber, MacAddress) output inserted.ID as 'InsertedID' values(@0, @1, @2, @3, @4)", OSDComputerName +" - "+ TaskSequenceID, AssetTag, UUID, SerialNumber, MacAddress); 
+        var ComputerIdentityID = InsertComputerIdentity.InsertedID;
+        var InsertSettings = db.QuerySingle("insert into Settings(ID, Type, OSDComputerName, TaskSequenceID, SkipWizard) values(@0, @1, @2,@3,@4)", ComputerIdentityID, Type, OSDComputerName, TaskSequenceID.ToUpper(),SkipWizard);
+        message = "Successfully Staged"+ OSDComputerName;
+        }
+        catch(Exception ex){
+            
+          message = "Failed to Staged"+ OSDComputerName;   
+          @message
+        }
+        
+      }
+      //if value not equal 0 prompt user its not valid insert
+      else{
+          var message = ""; 
+          message = "Mac-Address is already pre-staged! Edit or remove it first.";
+          @message
+@MacAddress
+      }
+        
+
+  }
+
+  
+    }
+
+
+<link rel="stylesheet" type="text/css" href="~/css/dialog.css">
+
+<div>
+@RenderPage("~/Partials/StageNav.cshtml")
+</div>
+<div>
+@RenderPage("~/Partials/stagedgrid.cshtml")
+</div>

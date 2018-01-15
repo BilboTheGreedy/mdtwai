@@ -1,0 +1,44 @@
+﻿@{
+  
+    Page.Title = "MDT: Staged Machines";
+
+    var db = Database.Open("MDTDB") ;
+    var selectCommand = "SELECT MakeModelIdentity.ID,MakeModelIdentity.Make, MakeModelIdentity.Model, Settings.Type FROM MakeModelIdentity JOIN Settings ON Settings.ID=MakeModelIdentity.ID WHERE Type = 'M'";
+    var searchTerm = "";
+
+
+        if(!Request.QueryString["Model"].IsEmpty() ) {
+        selectCommand = "SELECT MakeModelIdentity.ID,MakeModelIdentity.Make, MakeModelIdentity.Model, Settings.Type FROM MakeModelIdentity JOIN Settings ON Settings.ID=MakeModelIdentity.ID WHERE Type = 'M' AND Model LIKE @0";
+        searchTerm = "%" + Request["Model"] + "%";
+    }
+
+    var selectedData = db.Query(selectCommand, searchTerm);
+    var grid = new WebGrid(source: selectedData, defaultSort: "Model", rowsPerPage:10);
+
+}
+
+<form method="get">
+    <div class="Test">
+
+      <input class="SearchTextBox" type="text" name="Model" placeholder="Model" value="@Request.QueryString["Model"]" /> 
+      <input class="btn-Search" type="Submit" value="Search" />
+      
+    </div>
+
+    @grid.GetHtml(
+        columns: grid.Columns(
+	    grid.Column("Make"),
+        grid.Column("Model"),
+	    grid.Column(format: @<a class="btn-Grid" href="~/Staging/Remove-Make-Model?id=@item.ID">Remove</a>),
+        grid.Column(format: @<a class="btn-Grid" href="~/Staging/Edit-Make-Model?id=@item.ID">Edit</a>)
+        ),
+                tableStyle: "grid",
+       headerStyle: "grid-header",
+       alternatingRowStyle: "grid-alternating-row",
+       selectedRowStyle: "grid-selected-row",
+       rowStyle: "grid-row-style",  
+            mode: WebGridPagerModes.NextPrevious,
+            previousText: "Previous", 
+            nextText: "Next"
+        )
+    </form>

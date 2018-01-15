@@ -1,0 +1,111 @@
+﻿@using System.Xml.Linq
+@{
+    //Requires authentication to access
+    if (!WebSecurity.IsAuthenticated) {
+        Response.Redirect("~/Account/Login?returnUrl="
+            + Request.Url.LocalPath);}
+
+
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Define Make/Model";
+     
+
+    //Load Applications from Control over HTTP
+    var ApplicationsFile = XDocument.Load("http://"+@GlobalVal.__MDTSrv+"/DeploymentShare/Control/Applications.xml");
+    var ApplicationsResults = from App in ApplicationsFile.Root.Elements()
+    select new { Name = App.Element("Name").Value,  appGUID = App.FirstAttribute.Value};
+
+
+    //Validation fields
+        Validation.RequireField("Make", "Make is required");
+        Validation.RequireField("Model", "Model is required");
+       
+ 
+   if(IsPost && Validation.IsValid()){ 
+       var db = Database.Open("MDTDB");
+    //ComputerIdentity
+    var AssetTag = "";
+    var UUID = "";
+    var SerialNumber = "";
+    var MacAddress = "";
+    var tesitng = "";
+
+
+        //Settings
+        var Make = "";
+        var Model = "YES";
+        var Type = "M";
+        var message = ""; 
+
+        Make = Request.Form["Make"];
+        Model = Request.Form["Model"];
+ 
+
+        //Insert new cords     
+        try{
+        var InsertMakeModelIdentity = db.QuerySingle("insert into MakeModelIdentity(Make, Model) output inserted.ID as 'InsertedID' values(@0, @1)", Make, Model); 
+        var MakeModelID = InsertMakeModelIdentity.InsertedID;
+        var InsertSettings = db.QuerySingle("insert into Settings(ID, Type) values(@0, @1)", MakeModelID, Type);
+        message = "Successfully Staged"+ Model;
+
+        //Applications
+        var Sequence = 0;
+          foreach(string SelectedApp in Request.Form){
+           if (SelectedApp.StartsWith("App_")) {
+               //Inc the sequence order
+                Sequence ++;
+               //Get App GUID
+               string appID = SelectedApp.Substring(6);
+               //Insert AppGUID and Sequence to DB
+               db.QuerySingle("insert into Settings_Applications(Type, ID,Sequence, Applications) values(@0, @1,@2,@3)",Type, MakeModelID, Sequence, Request.Form[SelectedApp]);    
+           }  
+       } 
+
+        Response.Redirect("~/Staging/List-Make-Model");
+        
+        }
+        catch(Exception e){
+            message = "failed to pre-stage" + " "+ @Model ;
+        }  
+        
+
+        }
+        
+
+  }
+
+  
+    
+
+
+<link rel="stylesheet" type="text/css" href="~/css/dialog.css">
+<div>
+@RenderPage("~/Partials/StageNav.cshtml")
+</div>
+
+@Html.ValidationSummary()
+
+<div></div>
+<div>
+<form method="post" class="minimal">
+    <div class="container">
+        <fieldset>
+                 <legend>Definition:</legend>
+    <p><label for="Make">Make:</label></p>
+        <input type="text" name="Make" placeholder="Make" value="@Request.Form["Make"]" />
+        
+    <p><label for="Model">Model:</label></p>
+        <input type="text" name="Model" placeholder="Model" value="@Request.Form["Model"]" />
+         </fieldset> 
+                  <fieldset>
+                 <legend>Applications</legend>
+             @foreach (var item in ApplicationsResults){
+         <input id="squaredOne" type="checkbox" name="App_@item.Name" value="@item.appGUID">@item.Name<br>
+                      }
+                  </fieldset>     
+    <input name="Action" type="submit" class="btn-minimal" type="submit" name="buttonSubmit" value="Add"/>
+   
+</div>
+</form> 
+
+</div>

@@ -1,0 +1,42 @@
+﻿@{
+            Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Statistics";
+    var db = Database.Open("MDTWarehouse") ;
+
+    //Avg Time
+    var AvgTimeQuery = "SELECT AVG(DATEDIFF(Minute, StartTime, EndTime)) AS Minutes FROM Deployments";
+    var AvgTimeData = db.QueryValue(AvgTimeQuery);
+    
+        TimeSpan span = TimeSpan.FromMinutes(AvgTimeData);
+        string AvgTime = span.ToString(@"hh\:mm\:ss");
+
+    //Total deployments all time
+    var TotDeploymentsQuery = "select COUNT(*) from Deployments";
+    var TotDeploymentsData = db.QueryValue(TotDeploymentsQuery);
+}
+
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <h2>Numbers</h2>
+      <table style="width:100%">
+  <tr>
+    <td>Avarage Deployment Time:</td>
+    <td>Total Number of Deployments all Time</td> 
+    <td>Total Number of Deployments this Week</td>
+  </tr>
+  <tr>
+    <td> <input type="datetime" value="@AvgTime" style="width: 70px"></td>
+    <td><input type="number" value="@TotDeploymentsData" style="width: 70px"></td> 
+    <td> <input type="number" value="@TotDeploymentsData" style="width: 70px"></td>
+  </tr>
+</table>
+
+     
+    <h2>Statistics By Charts</h2>
+    <p>The following chart is showing data warehouse report based on all time number of deployments and their Success/Failure.</p>
+    <p><img src="~/Charts/DeploymentStatus-Count.cshtml" alt="DeploymentStatusCount"/> </p>
+  </body>
+</html>

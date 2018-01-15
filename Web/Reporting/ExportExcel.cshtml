@@ -1,0 +1,42 @@
+﻿@{
+   
+
+    var appData = Server.MapPath("~/App_Data");
+    var originalFileName = "DeploymentDW.xls";
+    var newFileName = string.Format("{0}.xls", Guid.NewGuid().ToString());
+    var originalFile = Path.Combine(appData, originalFileName);
+    var newFile = Path.Combine(appData, newFileName);
+    File.Copy(originalFile, newFile);
+    
+    var northwind = Database.Open("Northwind");
+    var sql = "SELECT CustomerID, CompanyName, ContactName, Address, City, Country, Phone FROM Customers";
+    var customers = northwind.Query(sql);
+    
+    var connString = string.Format(@"Provider=Microsoft.Jet.OleDb.4.0;
+                                    Data Source={0}/{1};Extended Properties='Excel 8.0;HDR=Yes;'", 
+                                    appData, newFileName);
+    var provider = "System.Data.OleDb";
+
+    using (var excel = Database.OpenConnectionString(connString, provider)){
+        
+        sql = @"INSERT INTO [Sheet1$] (CustomerID, CompanyName, ContactName, Address, City, Country, Phone) 
+            VALUES (@0,@1,@2,@3,@4,@5,@6)";
+        foreach(var customer in customers){
+            excel.Execute(sql,  
+                customer.CustomerID, 
+                customer.CompanyName, 
+                customer.ContactName, 
+                customer.Address, 
+                customer.City, 
+                customer.Country, 
+                customer.Phone);
+        }
+    }
+
+    Response.AddHeader("Content-disposition", "attachment; filename=report.xls");
+    Response.ContentType = "application/octet-stream";
+    Response.TransmitFile(newFile);
+    Response.Flush();
+    File.Delete(newFile);
+    Response.End();
+}

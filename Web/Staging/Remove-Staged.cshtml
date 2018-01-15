@@ -1,0 +1,63 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Remove Staging";
+
+    var ID = "";
+    var Description = "";
+    var MacAddress = "";
+
+
+    if(!IsPost){
+        if(!Request.QueryString["ID"].IsEmpty() && Request.QueryString["ID"].AsInt() > 0){
+            ID = Request.QueryString["ID"];
+            var db = Database.Open("MDTDB");
+            var dbCommand = "SELECT * FROM ComputerIdentity WHERE ID = @0";
+            var row = db.QuerySingle(dbCommand, ID);
+            if(row != null) {
+                Description = row.Description;
+
+            }
+            else{
+                ModelState.AddFormError("No server was found for that ID.");
+            }
+        }
+        else{
+            ModelState.AddFormError("No server was found for that ID.");
+        }    
+    }
+
+    if(IsPost && !Request["buttonDelete"].IsEmpty()){
+        ID = Request.Form["ID"];
+        var db = Database.Open("MDTDB");
+        var DeleteIdentity = "DELETE FROM ComputerIdentity WHERE ID = @0";
+        db.Execute(DeleteIdentity, ID);
+
+        var DeleteSettings = "DELETE FROM Settings WHERE ID = @0";
+        db.Execute(DeleteSettings, ID);
+
+        var DeleteApplications = "DELETE FROM Settings_Applications WHERE ID = @0";
+        db.Execute(DeleteApplications, ID);
+
+        Response.Redirect("~/Staging/");
+    }
+}
+<link rel="stylesheet" type="text/css" href="~/css/dialog.css">
+<div>
+@RenderPage("~/Partials/StageNav.cshtml")
+</div>
+@Html.ValidationSummary()
+<p><a class="btn-OpenDialog" href="~/Staging/">Return to listing</a></p>
+
+<form method="post">
+<fieldset>
+<legend>Information</legend>
+
+<p><span>Description:</span>
+    <span>@Description</span></p>
+      
+
+
+<input type="hidden" name="ID" value="@ID" />
+<p><input class="btn-OpenDialog" type="submit" name="buttonDelete" value="Remove from Staging" /></p>
+</fieldset>
+</form> 

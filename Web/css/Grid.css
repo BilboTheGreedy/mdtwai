@@ -1,0 +1,104 @@
+/*Progress bar*/
+
+progress {
+/* style rules */
+}
+progress::-webkit-progress-bar {
+/* style rules */
+}
+progress::-webkit-progress-value {
+/* style rules */
+} 
+progress::-moz-progress-bar {
+/* style rules */
+}
+
+
+/*Grid*/
+.grid
+   {
+       width: 960px;
+       border: 0px;
+       border-collapse: collapse;
+   }
+     
+   .grid a
+   {
+       color: #000;
+       
+   }
+     
+    .grid-row-style td
+    {
+        text-align:center;
+        font-size: 18px;
+    }
+    .grid-header th
+    {
+        padding-right:20px;
+        padding-left:20px;
+        
+    }
+    .grid-alternating-row td
+    {
+        text-align:center;
+        font-size: 18px;
+    }
+   .grid-header
+   {
+       padding: 6px 5px;
+       text-align: center;
+       background-color: #e8eef4;
+       
+       height: 40px;
+
+   }
+     
+   .grid-footer
+   {
+       padding: 6px 5px;
+       text-align: center;
+       background-color: #e8eef4;
+       border-top: 2px solid #3966A2;
+       height: 30px;
+     
+
+   }
+     
+   .grid-alternating-row
+   {
+      height: 30px;
+       background-color: #f2f2f2;
+       border-bottom: 1px solid #d2d2d2;
+
+  }
+    .grid-row-style
+   {
+      height: 30px;
+      border-bottom: 1px solid #d2d2d2;
+     
+
+   }
+     
+   .grid-selected-row
+   {
+       font-weight: bold;
+   }
+
+.end_col    {
+
+    width: auto;
+    
+
+}
+
+.Progress_col    {
+   
+    
+    width: 250px;
+}
+.hostname_col    {
+    
+    
+
+}

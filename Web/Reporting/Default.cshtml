@@ -1,0 +1,25 @@
+﻿@{
+   Layout = "~/_SiteLayout.cshtml"; 
+    Page.Title = "Reporting";
+
+    var db = Database.Open("MDTWarehouse");
+    var query = "SELECT * FROM Deployments";
+    var data = db.Query(query);
+    var grid = new WebGrid(data, ajaxUpdateContainerId: "grid");
+
+   
+}
+<h1>Export to Excel</h1>
+<img src="~/images/excel.png" id="excel" alt="Export to Excel" title="Export to Excel" />
+<p>Under Construction... :-)</p>
+<input class="btn-minimal" type="button" value="Week" /><br>
+<input class="btn-minimal" type="button" value="Month" /><br>
+<input class="btn-minimal" type="button" value="Year" /><br>
+
+<div id="gridContainer">
+    <div id="grid">
+        @grid.GetHtml()
+        
+        
+    </div>
+</div>

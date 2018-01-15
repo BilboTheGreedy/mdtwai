@@ -1,0 +1,30 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";
+    // Log out of the current user context
+    WebSecurity.Logout();
+
+    // Redirect back to the homepage or return URL
+    var returnUrl = Request.QueryString["ReturnUrl"];
+    if (returnUrl.IsEmpty()) {
+        Response.Redirect("~/");
+    } else {
+        Context.RedirectLocal(returnUrl);
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="@Href("~/css/stylesheet.css")" type="text/css" />
+        <link rel="stylesheet" href="@Href("~/css/dialog.css")" type="text/css" />
+        <link rel="stylesheet" href="@Href("~/css/Grid.css")" type="text/css" />
+        <title>Logout</title>
+    </head>
+    <body>
+        <div class="Centered">
+        <h1>Logout</h1>
+        <p>You are now logged out...
+        </p>
+        <p><a href="@Href("~/Default")">Return to home page</a></p>
+            </div>
+    </body>
+</html>

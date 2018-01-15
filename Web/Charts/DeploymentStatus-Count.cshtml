@@ -1,0 +1,13 @@
+﻿@{
+    var db = Database.Open("MDTWarehouse");
+    var data = db.Query("select DeploymentStatus, COUNT(*) as StatusCount From Deployments Group BY DeploymentStatus");
+            
+    var key = new Chart(width: 600, height: 400)
+                .AddTitle("Deployment Status Count")
+                .AddSeries(
+                    xValue: data, xField: "DeploymentStatus",
+                    yValues: data, yFields: "StatusCount")
+                .Write();
+        
+   
+}

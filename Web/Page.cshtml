@@ -1,0 +1,28 @@
+﻿@using System.Xml.Linq
+@using System.Xml.XPath
+@{
+
+var file = XDocument.Load("http://"+@GlobalVal.__MDTSrv+"/DeploymentShare/Control/TaskSequences.xml");
+var results = from e in file.Root.Elements()
+                    select new { Name = e.Element("Name").Value, ID = e.Element("ID").Value };
+
+
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title></title>
+    </head>
+    <body>
+        
+        <select name="TaskSequenceID"> 
+        @foreach (var item in results){
+                
+           <option value="@Request.Form["TaskSequenceID"]">@item.Name</option> 
+        }
+            </select>
+    </body>
+</html>

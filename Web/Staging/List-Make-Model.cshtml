@@ -1,0 +1,27 @@
+﻿@using System.Xml.Linq
+@{
+    //Requires authentication to access
+    if (!WebSecurity.IsAuthenticated) {
+        Response.Redirect("~/Account/Login?returnUrl="
+            + Request.Url.LocalPath);}
+
+
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "List Make/Model";
+     
+   
+
+}
+        
+
+
+
+
+<link rel="stylesheet" type="text/css" href="~/css/dialog.css">
+
+<div>
+@RenderPage("~/Partials/StageNav.cshtml")
+</div>
+<div>
+@RenderPage("~/Partials/Make-Model-grid.cshtml")
+</div>

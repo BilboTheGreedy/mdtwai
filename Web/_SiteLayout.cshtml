@@ -1,0 +1,81 @@
+﻿@using Microsoft.Web.Helpers
+@{
+       
+    
+
+}
+
+<!DOCTYPE html> 
+<html> 
+<head>
+	<title>MDT:WAI</title> 
+	
+    <link href="~/css/menu.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/grid.css" rel="stylesheet" type="text/css" />
+	<link href="~/css/status.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/stylesheet.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/dialog.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="~/scripts/jquery-2.1.1.min.js"></script>
+	          
+    
+	<script>
+     
+
+        $(function () {
+            setNavigation();
+        });
+
+        function setNavigation() {
+            var path = window.location.pathname;
+            path = path.replace(/\/$/, "");
+            path = decodeURIComponent(path);
+
+            $("ul.cbp-vimenu li a").each(function () {
+                var href = $(this).attr('href');
+                if (path.substring(0, href.length) === href) {
+                    $(this).closest('li').addClass('cbp-vicurrent');
+                }
+            });
+        }
+
+
+	</script>
+   
+
+
+
+  </head>
+
+
+<body>
+		<div class="container">
+			<header class="clearfix">
+				<span>Microsoft Deployment Toolkit</span>
+                @if(WebSecurity.IsAuthenticated)
+                {<p>Welcome, @WebSecurity.CurrentUserName - <a href="@Href("~/Account/Logout")">Logout</a>@if (Roles.IsUserInRole(WebSecurity.CurrentUserName, "Admin")){<a href="~/Admin/ManageRoles.cshtml">Manage Roles</a>}</p>}
+                else
+                {<p>Welcome, Guest - <a href="@Href("~/Account/Login")">Login</a></p>}
+				<h2>@Page.Title</h2>
+			</header>
+			<ul class="cbp-vimenu">
+				<li><a href="~/Default" class="icon-logo">Start</a></li>
+				<li><a href="~/Monitor" class="icon-monitor">Monitor</a></li>
+				<li><a href="~/staging" class="icon-stage">staging</a></li>
+				<li><a href="~/Charts" class="icon-charts">Charts</a></li>
+				<li><a href="~/Reporting" class="icon-report">Reporting</a></li>
+				<li><a href="~/Settings" class="icon-settings">Settings</a></li>
+			</ul>
+			<div class="main">
+                 @RenderBody()
+            </div>
+		</div>
+            <footer>
+            <div class="content-wrapper">
+                <div class="float-left">
+                    <p><a href="http://www.microsoft.com/en-us/openness/licenses.aspx">Microsoft Reciprocal License (MS-RL)</a></p>
+                    <p>&copy; @DateTime.Now.Year - Microsoft Deployment Toolkit Web Administration Interface</p>
+                </div>
+            </div>
+        </footer>
+	</body>
+</html>

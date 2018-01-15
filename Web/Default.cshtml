@@ -1,0 +1,45 @@
+﻿@using Microsoft.Web.Helpers
+@{
+   Layout = "~/_SiteLayout.cshtml"; 
+   Page.Title = "MDT Web Administration Interface";
+   var message  = "fail";
+   
+   
+
+var odataLink = ("http://"+@GlobalVal.__MDTSrv+":9801/MDTMonitorData/Computers");
+   var oDataSvc = odataLink;
+   var result = OData.Get(oDataSvc);
+
+      var ping = new System.Net.NetworkInformation.Ping();
+
+var PingResult = ping.Send(@GlobalVal.__MDTSrv);
+var PingMessage = "";
+
+if (PingResult.Status == System.Net.NetworkInformation.IPStatus.Success){
+    PingMessage = "Success";
+}
+if (PingResult.Status == System.Net.NetworkInformation.IPStatus.TimedOut){
+    PingMessage = "TimeOut";
+}
+
+
+
+   
+}
+
+      
+
+    <p>Welcome to Microsoft Deployment Toolkit Web administration interface (MDT:WAI), this is a proof of concept in which the purpose was to demestrate how statistics and monitoring of Microsoft deployment framework MDT.
+    </p>
+    <p>This site also demestrates how machines can be staged through the MDT:WAI. Machines can be pre-staged for a deployment where Task Sequence and hostname is pre-selected. Machines are identified by Mac Address. Its also possible to use AssetTag or UUID as identifier.</p>
+    <p>All monitoring, charts and reports are available to the browser to the menu on the left. However Staging (Flag) and Settings (Cog) is access restricted and will require authentication. You can register on the site but unless you sit on the same network as this webserver. A user whos role is "Admin" can assign and create user accounts through WAI.</p>
+   <div class="tiles-active" >
+       <div class="tiles-active-content">
+       <h3>Currently Active:@result.Count</h3><br>
+        <p>MDT Server: @GlobalVal.__MDTSrv </p>
+        <p>Ping = @PingMessage</p>
+   </div>
+   </div>
+
+   </div>
+

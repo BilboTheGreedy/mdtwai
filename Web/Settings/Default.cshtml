@@ -1,0 +1,35 @@
+﻿@using System.Xml.Linq
+@{
+       Layout = "~/_SiteLayout.cshtml"; 
+    Page.Title = "Settings";
+
+    //Load TaskSequances from Control over HTTP
+    var SettingsFile = XDocument.Load("http://"+@GlobalVal.__MDTSrv+"/DeploymentShare/Control/Settings.xml");
+    var SettingsFileResults = from Setting in SettingsFile.Root.Elements()
+    select new { SettingValue = Setting.Value, SettingsName = Setting.Name};
+}
+
+<!DOCTYPE html>
+
+<form method="post" class="minimal">
+    
+    <div class="container">
+        <h2>Web Service</h2>
+    <p><label for="oDataLink">MDT oData Address:</label></P>
+        <input disabled type="text" name="oDataLink" placeholder="oDataLink" value="@GlobalVal.__oDataLink" />
+
+        <hr>
+        <h2>Boot Image</h2>
+        <label for="oDataLink">Request LiteTocuh Refresh</label>
+   <input name="Action" type="submit" class="btn-minimal" name="buttonSubmit" value="Refresh"/><input class="btn-Search" type="button" value="Download ISO" />
+        <hr>
+
+              <h2>@GlobalVal.__MDTSrv Share Settings</h2>
+
+        @foreach (var item in SettingsFileResults){
+           <label for="@item.SettingValue">@item.SettingsName</label>     
+           <input disabled type="text" value="@item.SettingValue"/> 
+        }
+                     
+</div>
+</form> 
